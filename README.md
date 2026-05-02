@@ -1,131 +1,120 @@
 <div align="center">
 
-# 🩸 AWS ITP Bleeding Prediction POC
+# AWS ITP Bleeding Prediction POC
 
-### Hybrid Machine Learning + Agentic AI for Clinical Decision Support
+### Multi-Agent AI for Clinical Decision Support
 
-A proof-of-concept system on AWS for predicting bleeding risk in adult patients with **Primary Immune Thrombocytopenia (ITP)**, combining classical ML with an Agentic AI explanation layer in Vietnamese.
+A proof-of-concept system on AWS for assessing bleeding risk in adult patients with **Primary Immune Thrombocytopenia (ITP)**, using a multi-agent AI architecture with Vietnamese-language clinical decision support.
 
 ---
 
 ![Status](https://img.shields.io/badge/status-planning-yellow)
 ![License](https://img.shields.io/badge/license-MIT-green)
-![Phase](https://img.shields.io/badge/phase-1%20of%203-blue)
-![Python](https://img.shields.io/badge/python-3.11%2B-blue?logo=python&logoColor=white)
+![Plan](https://img.shields.io/badge/plan-v0.0.6-blue)
 
-**Topics**
-
-![Healthcare](https://img.shields.io/badge/topic-healthcare-e63946)
-![Hematology](https://img.shields.io/badge/topic-hematology-c1121f)
-![Clinical Decision Support](https://img.shields.io/badge/topic-CDSS-780000)
-![Machine Learning](https://img.shields.io/badge/topic-machine%20learning-4361ee)
-![Agentic AI](https://img.shields.io/badge/topic-agentic%20AI-7209b7)
-![Explainable AI](https://img.shields.io/badge/topic-XAI-3a0ca3)
-![RAG](https://img.shields.io/badge/topic-RAG-f77f00)
-
-**Cloud & Infrastructure**
-
-![AWS](https://img.shields.io/badge/AWS-232F3E?logo=amazonaws&logoColor=white)
-![Amazon SageMaker](https://img.shields.io/badge/SageMaker-FF9900?logo=amazon-sagemaker&logoColor=white)
+![AWS CDK](https://img.shields.io/badge/AWS%20CDK-232F3E?logo=amazonaws&logoColor=white)
 ![Amazon Bedrock](https://img.shields.io/badge/Bedrock-222222?logo=amazon&logoColor=white)
-![AWS Lambda](https://img.shields.io/badge/Lambda-FF9900?logo=awslambda&logoColor=white)
-![Amazon S3](https://img.shields.io/badge/S3-569A31?logo=amazons3&logoColor=white)
-![DynamoDB](https://img.shields.io/badge/DynamoDB-4053D6?logo=amazondynamodb&logoColor=white)
-![API Gateway](https://img.shields.io/badge/API%20Gateway-FF4F8B?logo=amazonapigateway&logoColor=white)
-![Cognito](https://img.shields.io/badge/Cognito-DD344C?logo=amazoncognito&logoColor=white)
-![OpenSearch](https://img.shields.io/badge/OpenSearch-005EB8?logo=opensearch&logoColor=white)
-![CloudFront](https://img.shields.io/badge/CloudFront-8C4FFF?logo=amazoncloudfront&logoColor=white)
-
-**ML & Frontend**
-
-![Python](https://img.shields.io/badge/Python-3776AB?logo=python&logoColor=white)
-![scikit-learn](https://img.shields.io/badge/scikit--learn-F7931E?logo=scikitlearn&logoColor=white)
-![XGBoost](https://img.shields.io/badge/XGBoost-337AB7)
-![LightGBM](https://img.shields.io/badge/LightGBM-00A0DC)
-![SHAP](https://img.shields.io/badge/SHAP-orange)
-![Claude](https://img.shields.io/badge/Claude%203%20Haiku-D97757?logo=anthropic&logoColor=white)
-![React](https://img.shields.io/badge/React-20232A?logo=react&logoColor=61DAFB)
+![Claude](https://img.shields.io/badge/Claude%20Sonnet%2FHaiku-D97757?logo=anthropic&logoColor=white)
+![Strands SDK](https://img.shields.io/badge/Strands%20SDK-7B2FBE)
 
 </div>
 
 ---
 
-## 📖 Overview
+## Overview
 
-Primary ITP is an autoimmune disorder where bleeding risk becomes difficult to predict once platelet counts exceed 10 × 10⁹/L. This project builds a clinical decision-support tool that combines:
+Primary ITP is an autoimmune disorder where bleeding risk becomes difficult to predict once platelet counts exceed 10 x 10^9/L. This project builds a clinical decision-support tool using a pure multi-agent AI architecture:
 
-- 🧠 **Classical ML core** — Random Forest, XGBoost, LightGBM, and Logistic Regression trained on hospital ITP data, producing AUC comparisons and SHAP analysis.
-- 🤖 **Agentic AI wrapper** — Amazon Bedrock agents (supervisor + sub-agents) producing natural-language, guideline-backed explanations in Vietnamese.
+- **Supervisor agent** — Claude Sonnet 4.5 on AgentCore Runtime, orchestrating four specialist sub-agents via the Strands Agents-as-Tools pattern, producing Vietnamese-language guideline-backed explanations.
+- **Specialist sub-agents** — Intake (clinical NER), Risk-Reasoner (literature-prior scoring with Code Interpreter), Guidelines (RAG over ASH/ISTH/BV TMHH protocols), and Cohort-Lookup (similar past patients from DynamoDB).
 
-The hybrid design keeps the statistically rigorous ML model at the center (for thesis validation) while layering an LLM-based explanation interface on top for clinical usability.
+The system is built against the official AWS Solutions Library multi-agent reference architecture (AgentCore + Strands).
 
-## 👥 Project Context
+## Project Context
 
-### 🎯 Research Objectives
+**Research Objectives**
 
-1. Describe clinical characteristics, laboratory findings, and bleeding status of adult ITP patients at BV TMHH
-2. Compare predictive performance (AUC, sensitivity, specificity) of RF, XGBoost, LightGBM, and LR models; identify feature importance
-3. Deliver an online application that helps clinicians rapidly assess bleeding risk
+1. Describe clinical characteristics, laboratory findings, and bleeding status of adult ITP patients at BV TMHH (2022-2026)
+2. Build a multi-agent AI system that assesses bleeding risk and generates guideline-backed explanations in Vietnamese
+3. Deliver an online application enabling clinicians to rapidly assess bleeding risk and review reasoning
 
-## 🏗️ Architecture
+## Architecture
 
-Four-layer AWS design:
+The production target (Pattern A) follows the AWS AgentCore + Strands reference design:
 
 | Layer | Components |
 |-------|-----------|
-| **4. Application** | API Gateway + Cognito, React (Vietnamese), Bedrock Guardrails |
-| **3. Agentic AI** | Bedrock Agent `IDA` (supervisor) orchestrating Data Processing, Prediction, and Explanation sub-agents |
-| **2. ML Serving** | SageMaker Studio (training), SageMaker Endpoint (inference), SageMaker Clarify (SHAP) |
-| **1. Data** | S3 (data lake), AWS Glue (ETL), DynamoDB (feature store), OpenSearch Serverless (RAG vectors) |
+| **User access** | CloudFront + S3, Cognito (JWT), WAF |
+| **Edge** | AgentCore Runtime endpoint — validates JWT, routes to supervisor, streams SSE |
+| **Orchestration** | Strands Supervisor-Agent on AgentCore Runtime — delegates to sub-agents via Agents-as-Tools |
+| **Specialists (x4)** | Intake, Risk-Reasoner, Guidelines, Cohort-Lookup — each on its own AgentCore Runtime |
+| **Tools** | AgentCore Gateway exposing 8 Lambda functions as MCP endpoints; Comprehend Medical for NER |
+| **Memory** | AgentCore Memory (short-term session + long-term clinician preferences) |
+| **Knowledge** | Bedrock Knowledge Bases over OpenSearch Serverless (ASH/ISTH/BV TMHH guidelines) |
+| **Identity** | AgentCore Identity — JWT propagated end-to-end across all runtimes |
+| **Observability** | AgentCore Observability + CloudWatch + OpenTelemetry |
+| **Data** | S3 (data lake), DynamoDB (cohort index + sessions), Aurora Serverless v2 pgvector (prototype RAG) |
 
-Full details — including agent prompts, input features, cost estimates, and references — are in [`ITP_Bleeding_Prediction_Research_Plan.md`](./ITP_Bleeding_Prediction_Research_Plan.md).
+Full details — including agent prompts, cost estimates, and risk register — are in [`plans/itp_plan_v6.md`](./plans/itp_plan_v6.md).
 
-## 🧪 Tech Stack
+## Tech Stack
 
 | Category | Technologies |
 |----------|-------------|
-| **Language** | Python 3.11+, TypeScript |
-| **ML** | scikit-learn, XGBoost, LightGBM, SHAP |
-| **LLM / Agents** | Amazon Bedrock, Claude 3 Haiku, Bedrock Agents, Bedrock Knowledge Base, Bedrock Guardrails |
-| **Data** | Amazon S3, AWS Glue, DynamoDB, OpenSearch Serverless |
-| **Serving** | SageMaker Endpoint, SageMaker Clarify, AWS Lambda |
-| **Application** | React.js, API Gateway, Amazon Cognito, AWS Amplify, CloudFront |
-| **Observability** | Amazon CloudWatch |
+| **Languages** | Python 3.11+, TypeScript |
+| **Agent framework** | Strands Agents SDK, Amazon Bedrock AgentCore (Runtime, Memory, Gateway, Identity, Observability) |
+| **LLM** | Claude Sonnet 4.5 (supervisor), Claude Haiku 4.5 (sub-agents) |
+| **RAG / Knowledge** | Amazon Bedrock Knowledge Bases, OpenSearch Serverless (Pattern A), Aurora Serverless v2 pgvector (Pattern B) |
+| **Data** | Amazon S3, Amazon DynamoDB, AWS Glue |
+| **Compute** | AWS Lambda (8 action-group functions), Amazon ECR (ARM64 containers) |
+| **NLP** | Amazon Comprehend Medical (clinical NER) |
+| **Application** | React.js, Amazon CloudFront, Amazon Cognito, AWS Amplify, AWS WAF |
+| **IaC** | AWS CDK v2 |
+| **Observability** | Amazon CloudWatch, OpenTelemetry |
+| **Security** | AWS KMS, AgentCore Identity (JWT), Bedrock Guardrails |
 
-## 🩺 Clinical Inputs (10 Features)
+## Clinical Inputs (11 Features)
 
-Infection · uncontrolled diabetes · age · ITP type · cardiovascular disease · low lymphocyte count · skin/mucosa bleeding · initial platelet count · current platelet count <20 × 10⁹/L · disease duration.
+Infection · uncontrolled diabetes · age · ITP type · cardiovascular disease · low lymphocyte count · skin/mucosa bleeding · initial platelet count · current platelet count <20 x 10^9/L · disease duration · active treatment.
 
-**Outcome**: Hemorrhage ≥ Grade 2 (WHO scale), binary.
+**Outcome**: Hemorrhage >= Grade 2 (WHO scale), binary risk assessment.
 
-## 🗓️ Implementation Phases
+## Implementation Phases
+
+The plan uses a staged Pattern B (prototype) to Pattern A (production) migration:
 
 | Phase | Timeline | Deliverable |
 |-------|----------|-------------|
-| **1. Data & ML Core** | Months 1–2 | Trained models, AUC comparison, SHAP analysis |
-| **2. Agentic AI Layer** | Months 3–4 | Bedrock agent pipeline with RAG explanations |
-| **3. Application & UAT** | Months 5–6 | Production React app, clinician testing at BV TMHH |
+| **1. Foundation** | Months 1-2 | AWS setup, IAM, S3, Glue ETL, DynamoDB cohort index, Aurora pgvector for guidelines |
+| **2a. Pattern B Prototype** | Months 3-4 | Bedrock multi-agent collaboration, RAG pipeline, Vietnamese prompt tuning |
+| **2b. Pattern A Migration** | Months 5-6 | Strands SDK rewrite, CDK stacks, AgentCore deployment, OpenSearch migration |
+| **3. Application** | Month 7 | React frontend, Cognito auth, SSE streaming, clinical UX components |
+| **4. Clinical Evaluation** | Months 7-8 | 50-case prospective study vs. 3 hematologists; Kappa agreement, Likert satisfaction |
+| **5. Analysis & Writing** | Month 9 | Thesis analysis, audit of explanations, final report |
 
-## 🚦 Status
+Decision point at end of Phase 2a: confirm Pattern A migration or remain on Pattern B.
 
-> 🟡 **Planning phase** — the detailed technical blueprint is checked in; implementation code is added during Phase 1.
+## Status
 
-## 🔒 Security & Compliance
+**Planning** — v0.0.6 architecture is finalised; implementation begins in Phase 1.
 
-- ✅ All AWS services selected are HIPAA-eligible (BAA required)
-- ✅ Patient data is de-identified before entering the system
-- ✅ SSE-S3 at rest, TLS 1.2+ in transit, VPC isolation for compute
-- ✅ Cognito MFA for clinician authentication
-- ✅ Bedrock Guardrails enforce PHI filtering and scope restriction (risk assessment only — not treatment prescription)
+## Security & Compliance
 
-## 📚 References
+- All AWS services selected are HIPAA-eligible (BAA required)
+- Patient data is de-identified before entering the system
+- SSE-S3 at rest, TLS 1.2+ in transit
+- Cognito MFA for clinician authentication; JWT propagated end-to-end via AgentCore Identity
+- Bedrock Guardrails enforce PHI filtering and restrict scope to ITP risk assessment (not treatment prescription)
+- OpenTelemetry audit trail across all agent runtimes
 
-- **An et al. (2023)** — *Life-threatening bleeding prediction model for ITP based on personalized ML*, Science Bulletin 68:2106–2114
-- **Dhiman et al. (2026)** — *An Agentic AI system for disease diagnosis with explanations*, Informatics and Health 3:32–40
+## References
+
+- **An et al. (2023)** — *Life-threatening bleeding prediction model for ITP based on personalized ML*, Science Bulletin 68:2106-2114
+- **Dhiman et al. (2026)** — *An Agentic AI system for disease diagnosis with explanations*, Informatics and Health 3:32-40
 - **Shen et al. (2025)** — *Prediction of moderate-to-severe bleeding risk in pediatric ITP using ML*, Eur J Pediatr 184:283
 
 Full reference list in the research plan.
 
-## 📄 License
+## License
 
 Released under the [MIT License](./LICENSE).
