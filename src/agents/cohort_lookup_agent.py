@@ -18,6 +18,7 @@ cohort_lookup_agent = Agent(
     model="us.anthropic.claude-haiku-4-5-20251001-v1:0",
     tools=[run_cohort_lookup],
     system_prompt=load_prompt("cohort_lookup_vi.txt"),
+    callback_handler=None,
 )
 
 

@@ -20,6 +20,7 @@ guidelines_agent = Agent(
     model="us.anthropic.claude-haiku-4-5-20251001-v1:0",
     tools=[run_kb_retrieve],
     system_prompt=load_prompt("guidelines_vi.txt"),
+    callback_handler=None,
 )
 
 

@@ -7,8 +7,11 @@ from strands import Agent, tool
 from src.utils import load_prompt
 from src.tools.code_exec import execute_python
 
-RISK_PRIORS = Path(__file__).parent.parent.parent / "data" / "guidelines" / "itp_risk_priors_v1.md"
-RISK_PRIORS_TEXT = RISK_PRIORS.read_text(encoding="utf-8")
+_RISK_PRIORS_PATH = Path(__file__).parent.parent.parent / "data" / "guidelines" / "itp_risk_priors_v1.md"
+try:
+    RISK_PRIORS_TEXT = _RISK_PRIORS_PATH.read_text(encoding="utf-8")
+except FileNotFoundError:
+    RISK_PRIORS_TEXT = ""
 
 
 @tool
@@ -21,6 +24,7 @@ risk_reasoner_agent = Agent(
     model="us.anthropic.claude-haiku-4-5-20251001-v1:0",
     tools=[run_code_exec],
     system_prompt=load_prompt("risk_reasoner_vi.txt") + f"\n\n## Bảng trọng số nguy cơ\n{RISK_PRIORS_TEXT}",
+    callback_handler=None,
 )
 
 
