@@ -4,63 +4,92 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a **Hybrid ML + Agentic AI** proof-of-concept for ITP (Primary Immune Thrombocytopenia) bleeding risk prediction, built on AWS. The system combines classical ML models (Random Forest, XGBoost, LightGBM, Logistic Regression) with an Agentic AI layer using Amazon Bedrock for Vietnamese-language clinical decision support.
+This is a **Pure Multi-Agent AI** proof-of-concept for ITP (Primary Immune Thrombocytopenia) bleeding risk prediction, built on AWS. The system uses an agentic AI layer (Amazon Bedrock + AgentCore + Strands SDK) for Vietnamese-language clinical decision support, replacing the earlier hybrid ML approach.
 
-**Context**: Supporting a master's thesis by Trần Xuân Nhiên (2025–2027) at BV Truyền máu Huyết học. The ML core satisfies academic requirements; the agentic layer provides novel contribution.
+**Context**: Supporting a master's thesis by Trần Xuân Nhiên (2025–2027) at BV Truyền máu Huyết học. The agentic layer provides the novel academic contribution; literature-anchored risk reasoning replaces classical ML model training.
 
-The detailed architecture is in `plans/ITP_Plan_v0.0.2.md` (current). Legacy plan files are in `plans/` for reference.
+The detailed architecture is in `plans/itp_plan_v6.md` (current). Legacy plan files are in `plans/` for reference.
 
 ## Architecture
 
-Four-layer AWS architecture:
+Two deployment patterns — Pattern B is the prototype path, Pattern A is the production target:
+
+### Pattern A — Production target (AgentCore + Strands SDK)
 
 ```
-Layer 4: API Gateway + Cognito → React Web App (Vietnamese) → Bedrock Guardrails
-Layer 3: Bedrock Agent "IDA" (supervisor) → Data Processing Agent (Lambda) + Prediction Agent (Lambda→SageMaker) + Explanation Agent (RAG+Bedrock)
-Layer 2: SageMaker (training, spot) → SageMaker Serverless Inference → SageMaker Clarify (SHAP)
-Layer 1: S3 (data lake) → Glue (ETL) → DynamoDB (feature store + feedback) → Aurora Serverless v2 pgvector (RAG vector store)
+User access:     CloudFront + S3 + Cognito + WAF → React App (Vietnamese)
+Edge:            AgentCore Runtime endpoint (JWT validation, SSE streaming)
+Orchestration:   Strands Supervisor-Agent on AgentCore Runtime
+Specialists:     Intake Agent | Risk-Reasoner Agent | Guidelines Agent | Cohort-Lookup Agent
+                 (each on its own AgentCore Runtime, invoked via Agents-as-Tools pattern)
+Tools layer:     AgentCore Gateway → MCP endpoints → Lambda functions (8 endpoints)
+Memory:          AgentCore Memory (short-term chat + long-term clinician preferences)
+Knowledge:       Bedrock Knowledge Bases over OpenSearch Serverless (ASH/ISTH/BV TMHH guidelines)
+Identity:        AgentCore Identity + Cognito (JWT propagated end-to-end)
+Observability:   AgentCore Observability + CloudWatch + OpenTelemetry
 ```
 
-**Key design decisions (v0.0.2):**
-- Foundation model: Claude 3 Haiku via Bedrock (multilingual Vietnamese support, cost-effective); intelligent routing to Nova Micro for simple queries
-- RAG source: ASH 2019 / ISTH guidelines + Vietnamese clinical protocols, stored in **Aurora Serverless v2 (pgvector)** — replaces OpenSearch Serverless to eliminate $350/month cost floor
-- Vector store upgrade path: Aurora pgvector → OpenSearch Serverless only if RAG quality is insufficient
-- Prediction input: 10 clinical features (see Section 6 of the plan)
-- Output: bleeding risk probability (0–1) + SHAP attribution + Vietnamese explanation
-- ML serving: SageMaker Serverless Inference (pay per request) — upgrade to always-on endpoint only if UAT latency is a problem
-- Prompt caching enabled on system prompt + guideline context (up to 90% cost reduction)
-- Web hosting: S3 + CloudFront (replaces Amplify)
+### Pattern B — Prototype path (Bedrock Multi-Agent Collaboration)
+
+```
+User access:     CloudFront + S3 + Cognito + WAF → React App (Vietnamese)
+Orchestration:   Bedrock Multi-Agent Collaboration (Supervisor + 4 sub-agents, fully managed)
+Knowledge:       Bedrock Knowledge Bases over Aurora Serverless v2 (pgvector)
+Tools:           Lambda action groups (DynamoDB, Comprehend Medical)
+Guardrails:      Bedrock Guardrails (PHI filtering, ITP/hematology scope)
+```
+
+**Key design decisions (v0.0.6):**
+- Foundation model: Claude Sonnet 4.5 (supervisor) + Claude Haiku 4.5 (sub-agents) via Bedrock
+- Agents-as-Tools pattern via Strands SDK (Pattern A) — supervisor calls sub-agents as typed Python functions
+- Vector store: OpenSearch Serverless (Pattern A) or Aurora Serverless v2 pgvector (Pattern B)
+- Risk reasoning: AgentCore Code Interpreter + literature-priors knowledge base (no SageMaker/SHAP)
+- Staged migration: build on Pattern B first (Months 3–4), migrate to Pattern A (Months 5–6)
+- AgentCore regions: `us-east-1` and `us-west-2` only (monitor for `ap-southeast-1` GA)
+- Infrastructure as code: AWS CDK v2.220+ with one CDK stack per AgentCore Runtime
 
 ## Implementation Phases (9-Month Plan)
 
-- **Phase 1** (Months 1–2): AWS setup + data engineering + EDA
-- **Phase 2** (Months 3–4): ML model training, Bayesian tuning, SHAP analysis
-- **Phase 3** (Months 5–6): Bedrock Agents orchestration + RAG pipeline (self-correcting RAG)
-- **Phase 4** (Month 7): React frontend + API Gateway + Cognito
-- **Phase 5** (Months 8–9): UAT with clinicians + A/B testing + LLM-as-a-judge RAG evaluation
+- **Phase 1** (Months 1–2): AWS setup + data engineering + cohort index in DynamoDB + guideline embeddings
+- **Phase 2a** (Months 3–4): Pattern B prototype — Bedrock Multi-Agent Collaboration, prompt tuning, RAG pipeline
+- **Phase 2b** (Months 5–6): Pattern A migration — Strands SDK, AgentCore Runtimes, CDK stacks, JWT + observability
+- **Phase 3** (Month 7): React frontend (SSE streaming, Vietnamese UI, Cognito auth, audit log viewer)
+- **Phase 4** (Months 7–8): Clinical evaluation — 50-case prospective study vs. 3 hematologists
+- **Phase 5** (Month 9): Analysis and thesis writing
+
+**Decision point**: End of Phase 2a — confirm Pattern A migration or stay on Pattern B for the remainder.
 
 ## Tech Stack
 
-- **Python 3.11+** — all Lambda functions, SageMaker jobs, data processing
+- **Python 3.11+** — Lambda functions, Strands agent code, data processing
+- **Strands Agents SDK** — open-source, wraps AgentCore primitives, Agents-as-Tools pattern (Pattern A)
 - **React.js** — frontend with Vietnamese i18n, hosted on S3 + CloudFront
-- **AWS services**: S3, Glue, DynamoDB, Aurora Serverless v2 (pgvector), SageMaker, Bedrock, Lambda, API Gateway, Cognito, CloudFront, CloudWatch
-- **ML libraries**: Scikit-learn, XGBoost, LightGBM (SageMaker built-in or custom containers)
-- **Cost profile**: Option B cost-optimized (~$65–155/month); see plan Section 10 for Option A vs. B breakdown
+- **AWS services (both patterns)**: S3, DynamoDB, Lambda, Cognito, CloudFront, CloudWatch, WAF, Bedrock Knowledge Bases, Comprehend Medical
+- **AWS services (Pattern A only)**: AgentCore Runtime, AgentCore Memory, AgentCore Gateway, AgentCore Identity, AgentCore Observability, OpenSearch Serverless, ECR, KMS, CDK
+- **AWS services (Pattern B only)**: Bedrock Agents (multi-agent collaboration), Bedrock Guardrails, Aurora Serverless v2 (pgvector)
+- **Cost profile**: Option B ~$173–318/month; Option A ~$540–745/month; staged B→A migration ~$2,800–4,500 over 9 months
 
 ## Expected Directory Structure (not yet created)
 
 ```
-infrastructure/     # Terraform or CDK for AWS resources
+infrastructure/     # CDK stacks (one per AgentCore Runtime + shared infra)
 src/
-  lambda/           # Data processing, prediction, and explanation agent handlers
-  ml/               # SageMaker training scripts (train.py per algorithm)
-  frontend/         # React app (Vietnamese UI)
-  agents/           # Bedrock agent definitions and prompt templates
+  agents/           # Strands agent definitions and system prompts (supervisor_vi.txt, etc.)
+  lambda/           # MCP tool implementations (DynamoDB queries, Comprehend Medical wrappers)
+  frontend/         # React app (Vietnamese UI, SSE streaming, audit log viewer)
 data/
   raw/              # Local copies of anonymised sample data (never real PHI)
   processed/        # Feature-engineered outputs
+  guidelines/       # ASH/ISTH/BV TMHH guideline documents for Knowledge Base ingestion
 docs/               # Architecture diagrams, API specs
 ```
+
+## Reference Implementations
+
+- `aws-solutions-library-samples/guidance-for-multi-agent-orchestration-using-bedrock-agentcore-on-aws` — Pattern A reference (fork at start of Phase 2b)
+- `aws-solutions-library-samples/guidance-for-multi-agent-orchestration-on-aws` — Pattern B/C umbrella reference
+- `aws-samples/bedrock-multi-agents-collaboration-workshop` — Pattern B hands-on workshop (Phase 2a learning)
+- `awslabs/amazon-bedrock-agentcore-samples` — AgentCore Code Interpreter samples (Risk-Reasoner)
 
 ## Compliance Constraints
 
@@ -68,4 +97,5 @@ docs/               # Architecture diagrams, API specs
 - HIPAA BAA with AWS required before using HIPAA-eligible services
 - Bedrock Guardrails must filter PHI and restrict LLM scope to ITP/hematology
 - Lambda functions must not log patient data
-- IAM: least-privilege roles per layer (data role, ML role, app role)
+- IAM: least-privilege roles per layer (data role, agent role, app role)
+- AgentCore Identity propagates JWT end-to-end; no manual Cognito authorizer wiring needed (Pattern A)
