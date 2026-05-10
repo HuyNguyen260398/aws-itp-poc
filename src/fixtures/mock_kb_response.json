@@ -1,0 +1,19 @@
+{
+  "results": [
+    {
+      "content": "Theo hướng dẫn ASH 2019, bệnh nhân ITP người lớn có số lượng tiểu cầu dưới 30×10⁹/L và có triệu chứng chảy máu cần được điều trị tích cực. Corticosteroid vẫn là lựa chọn đầu tay cho ITP mới chẩn đoán.",
+      "source": "ASH 2019 Guidelines, p.12",
+      "score": 0.94
+    },
+    {
+      "content": "Thuốc đồng vận thụ thể thrombopoietin (TPO-RA) như eltrombopag và romiplostim được khuyến cáo cho bệnh nhân ITP kháng trị hoặc tái phát sau corticosteroid. Tỷ lệ đáp ứng khoảng 70–80%.",
+      "source": "ISTH 2020 Guidelines, p.8",
+      "score": 0.91
+    },
+    {
+      "content": "Cắt lách là lựa chọn điều trị cho bệnh nhân ITP mãn tính kháng trị với tỷ lệ đáp ứng hoàn toàn lâu dài khoảng 60–65%. Cần đánh giá nguy cơ phẫu thuật và tiêm phòng trước cắt lách.",
+      "source": "BV Truyền máu Huyết học Protocol 2023, p.15",
+      "score": 0.88
+    }
+  ]
+}
